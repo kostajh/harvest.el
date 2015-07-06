@@ -184,7 +184,8 @@
       )))
 
 (defun harvest-clock-out ()
-  ;; Clocks out of any active timer.
+  "Clocks out of any active timer."
+  (interactive)
   (mapcar (lambda (entry)
             (if (alist-get '(timer_started_at) entry)
                 (let (
