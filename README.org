@@ -1,0 +1,10 @@
+* Harvest.el
+
+~Harvest.el~ is a Helm utility for interacting with [[http://harvestapp.com][Harvest]] from Emacs.
+
+** Features
+
+- Clock into a task for a given project and client
+- Toggle timers for entries you've created on a given day
+- Annotate entries
+
