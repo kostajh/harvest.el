@@ -220,9 +220,9 @@
         :candidate-number-limit 999))
 
 (defun harvest-clock-in-project-task-entry (entry task)
-  ;; Start a new timer for a task on a project. Entry is actually not populated,
-  ;; which is why we need to split "task" on the colon to retrieve project and
-  ;; task info.
+  "Start a new timer for a task on a project. Entry is actually not populated,
+  which is why we need to split "task" on the colon to retrieve project and
+  task info."
   (setq harvest-payload (make-hash-table :test 'equal))
   (puthash "project_id" (car (s-split ":" task)) harvest-payload)
   (puthash "task_id" (car (cdr (s-split ":" task))) harvest-payload)
