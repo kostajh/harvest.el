@@ -167,7 +167,14 @@
 
 
 (defun harvest-edit-description (entry)
-  (setq harvest-updated-description (read-string "Notes: " (alist-get '(notes) entry)))
+  "Edit the description for a Harvest day entry."
+  (setq harvest-payload (make-hash-table :test 'equal))
+  ;; TODO Not ideal to overwrite hours in Harvest, but unless we do it,
+  ;; it gets reset to 0.
+  (puthash "hours" (alist-get '(hours) entry) harvest-payload)
+  (puthash "project_id" (alist-get '(project_id) entry) harvest-payload)
+  (puthash "task_id" (alist-get '(task_id) entry) harvest-payload)
+  (puthash "notes" (read-string "Notes: " (alist-get '(notes) entry)) harvest-payload)
   (let (
         (harvest-auth (harvest-get-credentials))
         (url-request-method "POST")
@@ -176,9 +183,9 @@
         (url-mime-encoding-string nil)
         (url-mime-accept-string "application/json")
         (url-personal-mail-address nil)
+        (url-request-data (json-encode harvest-payload))
         )
     (setq request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/daily/update/%s" (alist-get '(id) entry))))
-    (print request-url)
     (setq url-request-extra-headers
           `(("Content-Type" . "application/json")
             ("Authorization" . ,(gethash "auth" harvest-auth))))
