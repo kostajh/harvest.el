@@ -77,6 +77,8 @@
       (goto-char (point-min))
       (search-forward "\n\n" nil t)
       (delete-region (point-min) (point))
+      (delete-file "~/.emacs.d/.harvest/daily.json")
+      (create-file-buffer "~/.emacs.d/harvest/daily.json")
       (write-file "~/.emacs.d/.harvest/daily.json")
       (json-read)
       )))
