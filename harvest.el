@@ -48,6 +48,7 @@
   (interactive)
   (harvest-refresh-entries)
   (helm :sources '(((name . "Day Entries")
+                    (multiline)
                     (candidates . harvest-day-entries-search)
                     (action-transformer . harvest-actions-for-entry))
                    ((name . "Tasks")
@@ -55,7 +56,8 @@
                     (action-transformer . harvest-actions-for-task-entry))
                    )
         :prompt "Project/Task: "
-        :buffer "*harvest*" :candidate-number-limit 100))
+        :buffer "*harvest*"
+        :candidate-number-limit 100))
 
 (defun harvest-refresh-entries()
   "Refresh the local cache of day entries and projects/tasks. N.B. this is called before harvest-clock-in, so you usually don't need to run this yourself."
@@ -114,11 +116,14 @@
       (setq active-indicator "*** ")
     (setq active-indicator ""))
   (concat active-indicator
+          (alist-get '(project) entry)
+          " ("
+          (alist-get '(client) entry)
+          ") "
+          "\n"
           (alist-get '(task) entry)
           " - "
-          (alist-get '(project) entry)
-          ":"
-          (alist-get '(client) entry)
+          (alist-get '(notes) entry)
           ))
 
 (defun harvest-format-project-entry (entry)
