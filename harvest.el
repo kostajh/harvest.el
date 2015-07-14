@@ -137,9 +137,6 @@
 (defun harvest-task-search ()
   (harvest-search-tasks helm-pattern))
 
-(defun harvest-project-task-search ()
-  (harvest-search-daily-entries helm-pattern))
-
 (defun harvest-get-cached-daily-entries ()
   (json-read-from-string
    (with-temp-buffer
