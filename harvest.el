@@ -128,7 +128,7 @@
 
 (defun harvest-format-project-entry (entry)
   "Show available projects and clients to clock in for"
-  (concat (alist-get '(client) entry) " - " (alist-get '(name) entry))
+  (concat (alist-get '(name) entry) " (" (alist-get '(client) entry) ")")
   )
 
 (defun harvest-day-entries-search ()
