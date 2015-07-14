@@ -183,6 +183,7 @@
       (message (format "Updated notes for task %s in %s for %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))
       )))
 
+;;;###autoload
 (defun harvest-clock-out ()
   "Clocks out of any active timer."
   (interactive)
@@ -280,6 +281,11 @@
           (json-read)
           (message clock-message)
           ))))
+
+;;;###autoload
+(add-hook 'org-clock-in-hook 'harvest-clock-in)
+;;;###autoload
+(add-hook 'org-clock-out-hook 'harvest-clock-out)
 
 (provide 'harvest)
 
