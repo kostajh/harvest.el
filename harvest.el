@@ -111,20 +111,20 @@
     (cdr alist)))
 
 (defun harvest-format-entry (entry)
-  "Format a task as a string. Format is TASK - PROJECT:CLIENT"
+  "Format a task as a string. Format is PROJECT (CLIENT) \n TASK - NOTES"
+  (setq formatted-string (concat active-indicator
+                                 (alist-get '(project) entry)
+                                 " ("
+                                 (alist-get '(client) entry)
+                                 ") "
+                                 "\n"
+                                 (alist-get '(task) entry)
+                                 " - "
+                                 (alist-get '(notes) entry)
+                                 ))
   (if (alist-get '(timer_started_at) entry)
-      (setq active-indicator "*** ")
-    (setq active-indicator ""))
-  (concat active-indicator
-          (alist-get '(project) entry)
-          " ("
-          (alist-get '(client) entry)
-          ") "
-          "\n"
-          (alist-get '(task) entry)
-          " - "
-          (alist-get '(notes) entry)
-          ))
+      (propertize formatted-string 'face 'bold)
+    (propertize formatted-string 'face 'nil)))
 
 (defun harvest-format-project-entry (entry)
   "Show available projects and clients to clock in for"
