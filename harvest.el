@@ -112,16 +112,16 @@
 
 (defun harvest-format-entry (entry)
   "Format a task as a string. Format is PROJECT (CLIENT) \n TASK - NOTES"
-  (setq formatted-string (concat active-indicator
-                                 (alist-get '(project) entry)
-                                 " ("
-                                 (alist-get '(client) entry)
-                                 ") "
-                                 "\n"
-                                 (alist-get '(task) entry)
-                                 " - "
-                                 (alist-get '(notes) entry)
-                                 ))
+  (setq formatted-string (concat
+                          (alist-get '(project) entry)
+                          " ("
+                          (alist-get '(client) entry)
+                          ") "
+                          "\n"
+                          (alist-get '(task) entry)
+                          " - "
+                          (alist-get '(notes) entry)
+                          ))
   (if (alist-get '(timer_started_at) entry)
       (propertize formatted-string 'face 'bold)
     (propertize formatted-string 'face 'nil)))
