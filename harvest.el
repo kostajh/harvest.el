@@ -118,6 +118,9 @@
                           " ("
                           (alist-get '(client) entry)
                           ") "
+                          "\t["
+                          (number-to-string (alist-get '(hours) entry))
+                          "]"
                           "\n"
                           (alist-get '(task) entry)
                           " - "
