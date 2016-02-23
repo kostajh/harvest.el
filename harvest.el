@@ -1,9 +1,14 @@
 ;;; harvest.el --- Harvest integration with Emacs
-
+;;
 ;; Copyright (C) 2016  Kosta Harlan
 
 ;; Author: Kosta Harlan <kosta@kostaharlan.net>
+;; Maintainer: Kosta Harlan <kosta@kostaharlan.net>
+;; Homepage: https://github.com/kostajh/harvest.el
 ;; Keywords: harvest
+;; Package-Requires: ((swiper))
+;;
+;; This file is not part of GNU Emacs.
 ;;; Code:
 
 (require 'url)
@@ -28,7 +33,6 @@
       (write-region (prin1-to-string harvest-auth-hash) nil "~/.emacs.d/.harvest/auth.el" harvest-auth-hash)
       (message "Credentials stored in '~/.emacs.d/.harvest/auth.el'")
       ))
-  ;; Refresh entries.
   (message "Retrieving data from Harvest")
   (harvest-refresh-entries)
   )
