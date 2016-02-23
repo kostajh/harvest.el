@@ -1,14 +1,14 @@
-;;; harvest.el --- Harvest integration with Emacs, via Helm
+;;; harvest.el --- Harvest integration with Emacs
 
-;; Copyright (C) 2015  Kosta Harlan
+;; Copyright (C) 2016  Kosta Harlan
 
 ;; Author: Kosta Harlan <kosta@kostaharlan.net>
-;; Keywords: helm harvest
+;; Keywords: harvest
 ;;; Code:
 
 (require 'url)
 (require 'json)
-(require 'helm)
+(require 'ivy)
 
 (defun harvest-init ()
   "Initialize harvest integration. Stores basic auth credentials and subdomain"
@@ -43,21 +43,29 @@
     (message "No file exists at ~/.emacs.d/harvest/auth.el. Try running harvest-init()")))
 
 ;;;###autoload
-(defun harvest-clock-in ()
-  "Start a timer for an entry in Harvest"
+(defun harvest ()
+  "Start the Harvest hydra."
   (interactive)
-  (harvest-refresh-entries)
-  (helm :sources '(((name . "Day Entries")
-                    (multiline)
-                    (candidates . harvest-day-entries-search)
-                    (action-transformer . harvest-actions-for-entry))
-                   ((name . "Tasks")
-                    (candidates . harvest-task-search)
-                    (action-transformer . harvest-actions-for-task-entry))
-                   )
-        :prompt "Project/Task: "
-        :buffer "*harvest*"
-        :candidate-number-limit 100))
+  (hydra-harvest/body))
+
+(defvar hydra-harvest nil)
+(defvar hydra-harvest-day-entry nil)
+(defvar harvest-selected-entry nil)
+
+(defhydra hydra-harvest ()
+  "harvest"
+  ("v" (harvest-search-daily-entries) "view day entries" :color blue)
+  ("n" (harvest-create-new-entry) "new entry")
+  ("o" (harvest-clock-out) "clock out" :color pink)
+  ("r" (harvest-refresh-entries) "refresh entries")
+  ("q" nil "quit"))
+
+(defhydra hydra-harvest-day-entry ()
+  "day entry"
+  ("e" (harvest-edit-description harvest-selected-entry) "edit description")
+  ("t" (harvest-toggle-timer-for-entry harvest-selected-entry) "toggle timer")
+  ("h" (message "not yet implemented") "edit hours")
+  ("q" hydra-harvest/body "quit" :exit t))
 
 (defun harvest-refresh-entries()
   "Refresh the local cache of day entries and projects/tasks. N.B. this is called before harvest-clock-in, so you usually don't need to run this yourself."
@@ -86,23 +94,31 @@
       (json-read)
       )))
 
-(defun harvest-search-daily-entries (search-term)
+
+(defun harvest-search-daily-entries ()
   "Get day entries from the daily.json file."
-  (mapcar (lambda (entry)
-            (cons (harvest-format-entry entry) entry))
-          (alist-get '(day_entries) (harvest-get-cached-daily-entries))))
+  (ivy-read "Day entries: "
+            (mapcar (lambda (entry)
+                      (cons (harvest-format-entry entry) entry))
+                    (alist-get '(day_entries) (harvest-get-cached-daily-entries)))
+            :action (lambda (x)
+                      (setq harvest-selected-entry x)
+                      (hydra-harvest-day-entry/body)))
+  )
 
-(defun harvest-search-tasks (search-term)
-  "Get project entries from the daily.json file"
-  (mapcar (lambda (entry)
-            (cons (harvest-format-project-entry entry) entry))
-          (alist-get '(projects) (harvest-get-cached-daily-entries))))
-
-(defun harvest-search-project-tasks (search-term)
-  "Get available tasks for a particular project"
-  (mapcar (lambda (entry)
-            (cons (harvest-format-project-task-entry entry) entry))
-          (alist-get '(tasks) (entry))))
+(defun harvest-create-new-entry ()
+  "Create a new entry for a particular project and task."
+  (ivy-read "Project: "
+            (mapcar (lambda (entry)
+                      (cons (harvest-format-project-entry entry) entry))
+                    (alist-get '(projects) (harvest-get-cached-daily-entries)))
+            :action (lambda (x)
+                      (setq harvest-selected-entry x)
+                      (ivy-read "Task: "
+                                (harvest-get-tasks-for-project harvest-selected-entry)
+                                :action (lambda (selection)
+                                          (harvest-clock-in-project-task-entry nil selection))))
+            ))
 
 (defun alist-get (symbols alist)
   "Look up the value for the chain of SYMBOLS in LIST."
@@ -135,40 +151,15 @@
   (concat (alist-get '(name) entry) " (" (alist-get '(client) entry) ")")
   )
 
-(defun harvest-day-entries-search ()
-  (harvest-search-daily-entries helm-pattern))
-
-(defun harvest-task-search ()
-  (harvest-search-tasks helm-pattern))
-
 (defun harvest-get-cached-daily-entries ()
   (json-read-from-string
    (with-temp-buffer
      (insert-file-contents "~/.emacs.d/.harvest/daily.json")
      (buffer-string))))
 
-(defun harvest-actions-for-entry (actions entry)
-  "Return a list of helm ACTIONS available for this ENTRY."
-  `((,(format "Toggle timer for - %s in %s for %s"
-              (alist-get '(task) entry)
-              (alist-get '(project) entry)
-              (alist-get '(client) entry)) . harvest-toggle-timer-for-entry)
-    (,(format "Edit notes - %s in %s for %s"
-              (alist-get '(task) entry)
-              (alist-get '(project) entry)
-              (alist-get '(client) entry)) . harvest-edit-description)
-    ("Show entry metadata" . pp)))
-
-(defun harvest-actions-for-task-entry (actions entry)
-  "Return a list of helm ACTIONS available for this ENTRY."
-  `((,(format "Clock in for - %s for %s"
-              (alist-get '(name) entry)
-              (alist-get '(client) entry)) . harvest-clock-in-task-entry)
-    ("Show entry metadata" . pp)))
-
-
 (defun harvest-edit-description (entry)
   "Edit the description for a Harvest day entry."
+  ;; TODO Refactor HTTP code.
   (setq harvest-payload (make-hash-table :test 'equal))
   ;; TODO Not ideal to overwrite hours in Harvest, but unless we do it,
   ;; it gets reset to 0.
@@ -201,6 +192,7 @@
 ;;;###autoload
 (defun harvest-clock-out ()
   "Clocks out of any active timer."
+  ;; TODO Refactor HTTP code.
   (interactive)
   (mapcar (lambda (entry)
             (if (alist-get '(timer_started_at) entry)
@@ -222,28 +214,23 @@
                   )))
           (alist-get '(day_entries) (harvest-refresh-entries))))
 
-(defun harvest-clock-in-task-entry (entry)
-  (helm :sources '((name . "Tasks")
-                   (candidates . (lambda ()
-                                   (mapcar (lambda (task)
-                                             (cons
-                                              (alist-get '(name) task)
-                                              (format "%d:%d" (alist-get '(id) entry) (alist-get '(id) task))))
-                                           (alist-get '(tasks) entry))))
-                   (action-transformer . harvest-clock-in-project-task-entry))
-        :prompt "Task: "
-        :buffer "*harvest*"
-        :candidate-number-limit 999))
+(defun harvest-get-tasks-for-project (project)
+  (mapcar (lambda (task)
+            (cons
+             (alist-get '(name) task)
+             (format "%d:%d" (alist-get '(id) project) (alist-get '(id) task))))
+          (alist-get '(tasks) project)))
 
 (defun harvest-clock-in-project-task-entry (entry task)
   "Start a new timer for a task on a project. Entry is actually not populated,
   which is why we need to split "task" on the colon to retrieve project and
   task info."
+  ;; TODO: Refactor HTTP code.
   (setq harvest-payload (make-hash-table :test 'equal))
   (puthash "project_id" (car (s-split ":" task)) harvest-payload)
   (puthash "task_id" (car (cdr (s-split ":" task))) harvest-payload)
   (puthash "notes" (read-string "Notes: ") harvest-payload)
-  
+  (print harvest-payload)
   (let (
         (harvest-auth (harvest-get-credentials))
         (url-request-method "POST")
@@ -267,6 +254,7 @@
 
 (defun harvest-toggle-timer-for-entry (entry)
   "Clock in or out of a given entry."
+  ;; TODO Refactor HTTP code.
   (setq prompt (format "Are you sure you want to clock in for %s?" (harvest-format-entry entry)))
   (setq clock-message (format "Clocked in for %s" (harvest-format-entry entry)))
   (if (assoc 'timer_started_at entry)
@@ -298,7 +286,7 @@
           ))))
 
 ;;;###autoload
-(add-hook 'org-clock-in-hook 'harvest-clock-in)
+(add-hook 'org-clock-in-hook 'harvest)
 ;;;###autoload
 (add-hook 'org-clock-out-hook 'harvest-clock-out)
 
