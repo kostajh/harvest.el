@@ -234,7 +234,6 @@
   (puthash "project_id" (car (s-split ":" task)) harvest-payload)
   (puthash "task_id" (car (cdr (s-split ":" task))) harvest-payload)
   (puthash "notes" (read-string "Notes: ") harvest-payload)
-  (print harvest-payload)
   (let (
         (harvest-auth (harvest-get-credentials))
         (url-request-method "POST")
