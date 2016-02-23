@@ -101,6 +101,8 @@
 
 (defun harvest-search-daily-entries ()
   "Get day entries from the daily.json file."
+  ;; TODO: Do this asynchronously, and earlier.
+  (harvest-refresh-entries)
   (ivy-read "Day entries: "
             (mapcar (lambda (entry)
                       (cons (harvest-format-entry entry) entry))
