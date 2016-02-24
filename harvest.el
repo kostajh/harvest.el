@@ -290,11 +290,5 @@
           (message clock-message)
           ))))
 
-;;;###autoload
-(add-hook 'org-clock-in-hook 'harvest)
-;;;###autoload
-(add-hook 'org-clock-out-hook 'harvest-clock-out)
-
 (provide 'harvest)
-
 ;;; harvest.el ends here

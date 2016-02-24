@@ -11,3 +11,14 @@
 ** Usage
 
 Call ~M-x harvest~ to start the main Harvest [[https://github.com/abo-abo/hydra][hydra]].
+
+** Configuration
+
+*** Org-mode integration
+
+Add the following to your configuration to clock in/out of Harvest when you clock in/out in Org-mode:
+
+#+BEGIN_SRC elisp
+(add-hook 'org-clock-in-hook 'harvest)
+(add-hook 'org-clock-out-hook 'harvest-clock-out)
+#+END_SRC
