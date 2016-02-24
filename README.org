@@ -8,6 +8,18 @@
 - Toggle timers for entries you've created on a given day
 - Edit time entry descriptions
 
+** Installation
+
+#+BEGIN_SRC elisp
+(use-package harvest
+    :demand t
+    :ensure t
+    :config
+    (evil-leader/set-key "oh" 'harvest)
+    (add-hook 'org-clock-in-hook 'harvest)
+    (add-hook 'org-clock-out-hook 'harvest-clock-out))
+#+END_SRC
+
 ** Usage
 
 Call ~M-x harvest~ to start the main Harvest [[https://github.com/abo-abo/hydra][hydra]].
