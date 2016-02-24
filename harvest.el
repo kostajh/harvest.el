@@ -15,6 +15,25 @@
 (require 'json)
 (require 'ivy)
 
+(defvar hydra-harvest nil)
+(defvar hydra-harvest-day-entry nil)
+(defvar harvest-selected-entry nil)
+
+(defhydra hydra-harvest ()
+  "harvest"
+  ("v" (harvest-search-daily-entries) "view day entries" :color blue)
+  ("n" (harvest-create-new-entry) "new entry")
+  ("o" (harvest-clock-out) "clock out" :color pink)
+  ("r" (harvest-refresh-entries) "refresh entries")
+  ("q" nil "quit"))
+
+(defhydra hydra-harvest-day-entry ()
+  "day entry"
+  ("e" (harvest-edit-description harvest-selected-entry) "edit description")
+  ("t" (harvest-toggle-timer-for-entry harvest-selected-entry) "toggle timer")
+  ("h" (message "not yet implemented") "edit hours")
+  ("q" hydra-harvest/body "quit" :exit t))
+
 (defun harvest-init ()
   "Initialize harvest integration. Stores basic auth credentials and subdomain"
   (interactive)
@@ -51,25 +70,6 @@
   "Start the Harvest hydra."
   (interactive)
   (hydra-harvest/body))
-
-(defvar hydra-harvest nil)
-(defvar hydra-harvest-day-entry nil)
-(defvar harvest-selected-entry nil)
-
-(defhydra hydra-harvest ()
-  "harvest"
-  ("v" (harvest-search-daily-entries) "view day entries" :color blue)
-  ("n" (harvest-create-new-entry) "new entry")
-  ("o" (harvest-clock-out) "clock out" :color pink)
-  ("r" (harvest-refresh-entries) "refresh entries")
-  ("q" nil "quit"))
-
-(defhydra hydra-harvest-day-entry ()
-  "day entry"
-  ("e" (harvest-edit-description harvest-selected-entry) "edit description")
-  ("t" (harvest-toggle-timer-for-entry harvest-selected-entry) "toggle timer")
-  ("h" (message "not yet implemented") "edit hours")
-  ("q" hydra-harvest/body "quit" :exit t))
 
 (defun harvest-refresh-entries()
   "Refresh the local cache of day entries and projects/tasks. N.B. this is called before harvest-clock-in, so you usually don't need to run this yourself."
@@ -139,14 +139,14 @@
                           (alist-get '(project) entry)
                           " ("
                           (alist-get '(client) entry)
-                          ") "
-                          "\t["
-                          (number-to-string (alist-get '(hours) entry))
-                          "]"
-                          "\n"
+                          ")"
+                          ": "
                           (alist-get '(task) entry)
                           " - "
                           (alist-get '(notes) entry)
+                          "\t["
+                          (number-to-string (alist-get '(hours) entry))
+                          "]"
                           ))
   (if (alist-get '(timer_started_at) entry)
       (propertize formatted-string 'face 'bold)
