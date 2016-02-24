@@ -6,7 +6,7 @@
 ;; Maintainer: Kosta Harlan <kosta@kostaharlan.net>
 ;; Homepage: https://github.com/kostajh/harvest.el
 ;; Keywords: harvest
-;; Package-Requires: ((swiper))
+;; Package-Requires: ((swiper "0.7.0") (hydra "0.13.0") (s "1.11.0"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;; Code:
@@ -14,6 +14,8 @@
 (require 'url)
 (require 'json)
 (require 'ivy)
+(require 'hydra)
+(require 's)
 
 (defun harvest-init ()
   "Initialize harvest integration. Stores basic auth credentials and subdomain"
