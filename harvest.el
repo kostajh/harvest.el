@@ -18,6 +18,7 @@
 (require 's)
 
 (defvar hydra-harvest nil)
+(defvar harvest-cached-daily-entries nil)
 (defvar hydra-harvest-day-entry nil)
 (defvar harvest-selected-entry nil)
 
@@ -36,8 +37,8 @@
   ("h" (message "not yet implemented") "edit hours")
   ("q" hydra-harvest/body "quit" :exit t))
 
-(defun harvest-init ()
-  "Initialize harvest integration. Stores basic auth credentials and subdomain"
+(defun harvest-authenticate()
+  "Authenticate with Harvest. Stores basic auth credentials and subdomain"
   (interactive)
   (let ((harvest-subdomain (read-string "Enter the subdomain: "))
         (harvest-username (read-string "Enter your username: "))
@@ -69,37 +70,14 @@
 
 ;;;###autoload
 (defun harvest ()
-  "Start the Harvest hydra."
+  "Start the main Harvest hydra."
   (interactive)
   (hydra-harvest/body))
 
 (defun harvest-refresh-entries()
   "Refresh the local cache of day entries and projects/tasks. N.B. this is called before harvest-clock-in, so you usually don't need to run this yourself."
   (interactive)
-  (let (
-        (harvest-auth (harvest-get-credentials))
-        (url-request-method "GET")
-        (url-set-mime-charset-string)
-        (url-mime-language-string nil)
-        (url-mime-encoding-string nil)
-        (url-mime-accept-string "application/json")
-        (url-personal-mail-address nil)
-        )
-    (setq request-url (concat "https://" (gethash "subdomain" harvest-auth) ".harvestapp.com/daily"))
-    (setq url-request-extra-headers
-          `(("Content-Type" . "application/json")
-            ("Authorization" . ,(gethash "auth" harvest-auth))))
-    (with-current-buffer (url-retrieve-synchronously request-url)
-      (goto-char (point-min))
-      (search-forward "\n\n" nil t)
-      (delete-region (point-min) (point))
-      (if (file-exists-p "~/.emacs.d/.harvest/daily.json")
-          (delete-file "~/.emacs.d/.harvest/daily.json"))
-      (create-file-buffer "~/.emacs.d/harvest/daily.json")
-      (write-file "~/.emacs.d/.harvest/daily.json")
-      (json-read)
-      )))
-
+  (setq harvest-cached-daily-entries (harvest-api "GET" "daily" nil "Refreshed cache of daily entries")))
 
 (defun harvest-search-daily-entries ()
   "Get day entries from the daily.json file."
@@ -108,7 +86,8 @@
   (ivy-read "Day entries: "
             (mapcar (lambda (entry)
                       (cons (harvest-format-entry entry) entry))
-                    (alist-get '(day_entries) (harvest-get-cached-daily-entries)))
+                    ;; TODO: Use cache data here.
+                    (alist-get '(day_entries) (harvest-refresh-entries)))
             :action (lambda (x)
                       (setq harvest-selected-entry x)
                       (hydra-harvest-day-entry/body)))
@@ -119,7 +98,8 @@
   (ivy-read "Project: "
             (mapcar (lambda (entry)
                       (cons (harvest-format-project-entry entry) entry))
-                    (alist-get '(projects) (harvest-get-cached-daily-entries)))
+                    ;; TODO: Use cache data here.
+                    (alist-get '(projects) (harvest-refresh-entries)))
             :action (lambda (x)
                       (setq harvest-selected-entry x)
                       (ivy-read "Task: "
@@ -160,10 +140,12 @@
   )
 
 (defun harvest-get-cached-daily-entries ()
-  (json-read-from-string
-   (with-temp-buffer
-     (insert-file-contents "~/.emacs.d/.harvest/daily.json")
-     (buffer-string))))
+  "Get daily entries from the variable, or query Harvest if not set."
+  ;; '(harvest-cached-daily-entries))
+  (if (boundp 'harvest-cached-daily-entries)
+      '(harvest-cached-daily-entries)
+    (harvest-refresh-entries))
+  '(harvest-cached-daily-entries))
 
 (defun harvest-edit-description (entry)
   "Edit the description for a Harvest day entry."
@@ -204,22 +186,7 @@
   (interactive)
   (mapcar (lambda (entry)
             (if (alist-get '(timer_started_at) entry)
-                (let (
-                      (harvest-auth (harvest-get-credentials))
-                      (url-request-method "GET")
-                      (url-set-mime-charset-string)
-                      (url-mime-language-string nil)
-                      (url-mime-encoding-string nil)
-                      (url-mime-accept-string "application/json")
-                      (url-personal-mail-address nil)
-                      )
-                  (setq request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/daily/timer/%s" (alist-get '(id) entry))))
-                  (setq url-request-extra-headers
-                        `(("Content-Type" . "application/json")
-                          ("Authorization" . ,(gethash "auth" harvest-auth))))
-                  (url-retrieve-synchronously request-url t)
-                  (message (format "Clocked out of %s in %s - %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))
-                  )))
+                (harvest-api "GET" (format "daily/timer/%s" (alist-get '(id) entry)) nil (message (format "Clocked out of %s in %s - %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry))))))
           (alist-get '(day_entries) (harvest-refresh-entries))))
 
 (defun harvest-get-tasks-for-project (project)
@@ -228,6 +195,30 @@
              (alist-get '(name) task)
              (format "%d:%d" (alist-get '(id) project) (alist-get '(id) task))))
           (alist-get '(tasks) project)))
+
+(defun harvest-api (method path payload completion-message)
+  "Make an API call to Harvest."
+  (let (
+        (harvest-auth (harvest-get-credentials))
+        (url-request-method method)
+        (url-set-mime-charset-string)
+        (url-mime-language-string nil)
+        (url-mime-encoding-string nil)
+        (url-mime-accept-string "application/json")
+        (url-personal-mail-address nil)
+        (url-request-data (json-encode payload))
+        )
+    (let ((request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/%s" path))))
+      (let ((url-request-extra-headers
+             `(("Content-Type" . "application/json")
+               ("Authorization" . ,(gethash "auth" harvest-auth))))))
+      (with-current-buffer (url-retrieve-synchronously request-url)
+        (goto-char (point-min))
+        (search-forward "\n\n" nil t)
+        (delete-region (point-min) (point))
+        (message "%s" completion-message)
+        (json-read)
+        ))))
 
 (defun harvest-clock-in-project-task-entry (entry task)
   "Start a new timer for a task on a project. Entry is actually not populated,
@@ -257,6 +248,7 @@
       (search-forward "\n\n" nil t)
       (delete-region (point-min) (point))
       (json-read)
+      (message "Started new task: %s" gethash "notes" harvest-auth)
       )))
 
 (defun harvest-toggle-timer-for-entry (entry)
