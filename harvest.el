@@ -218,17 +218,11 @@ colon to retrieve project and task info."
 
 (defun harvest-toggle-timer-for-entry (entry)
   "Clock in or out of a given ENTRY."
-  ;; TODO: Fix the logic here. Use let instead of setq.
-  (let ((timer_started (assoc 'timer_started_at entry)))
-    (if '(timer_started)
-        (progn
-          (setq prompt (format "Are you sure you want to clock in for %s?" (harvest-format-entry entry)))
-          (setq clock-message (format "Clocked in for %s" (harvest-format-entry entry))))
-      (setq prompt (format "Are you sure you want to clock out of %s?" (harvest-format-entry entry)))
-      (setq clock-message (format "Clocked out of %s" (harvest-format-entry entry)))) 
-    (if (yes-or-no-p prompt)
-        (harvest-api "GET" (format "daily/timer/%s" (alist-get '(id) entry)) nil clock-message)
-      )))
+  (if (assoc 'timer_started_at entry)
+      (when (yes-or-no-p (format "Are you sure you want to clock out of %s?" (harvest-format-entry entry)))
+        (harvest-api "GET" (format "daily/timer/%s" (alist-get '(id) entry)) nil (format "Clocked out of %s" (harvest-format-entry entry))))
+    (when (yes-or-no-p (format "Are you sure you want to clock in for %s?" (harvest-format-entry entry)))
+      (harvest-api "GET" (format "daily/timer/%s" (alist-get '(id) entry)) nil (format "Clocked in for of %s" (harvest-format-entry entry))))))
 
 (provide 'harvest)
 ;;; harvest.el ends here
