@@ -9,6 +9,8 @@
 ;; Package-Requires: ((swiper "0.7.0") (hydra "0.13.0") (s "1.11.0"))
 ;;
 ;; This file is not part of GNU Emacs.
+;;; Commentary:
+;;; TODO
 ;;; Code:
 
 (require 'url)
@@ -116,26 +118,27 @@
     (cdr alist)))
 
 (defun harvest-format-entry (entry)
-  "Format a task as a string. Format is PROJECT (CLIENT) \n TASK - NOTES"
-  (setq formatted-string (concat
-                          (alist-get '(project) entry)
-                          " ("
-                          (alist-get '(client) entry)
-                          ")"
-                          ": "
-                          (alist-get '(task) entry)
-                          " - "
-                          (alist-get '(notes) entry)
-                          "\t["
-                          (number-to-string (alist-get '(hours) entry))
-                          "]"
-                          ))
-  (if (alist-get '(timer_started_at) entry)
-      (propertize formatted-string 'face 'bold)
-    (propertize formatted-string 'face 'nil)))
+  "Format an ENTRY as a string.
+Format is PROJECT (CLIENT) \n TASK - NOTES" 
+  (let ((formatted-string (concat
+                           (alist-get '(project) entry)
+                           " ("
+                           (alist-get '(client) entry)
+                           ")"
+                           ": "
+                           (alist-get '(task) entry)
+                           " - "
+                           (alist-get '(notes) entry)
+                           "\t["
+                           (number-to-string (alist-get '(hours) entry))
+                           "]"
+                           )))
+    (if (alist-get '(timer_started_at) entry)
+        (propertize formatted-string 'face 'bold)
+      (propertize formatted-string 'face 'nil))))
 
 (defun harvest-format-project-entry (entry)
-  "Show available projects and clients to clock in for"
+  "Show available projects and clients to clock in for ENTRY."
   (concat (alist-get '(name) entry) " (" (alist-get '(client) entry) ")")
   )
 
@@ -148,41 +151,19 @@
   '(harvest-cached-daily-entries))
 
 (defun harvest-edit-description (entry)
-  "Edit the description for a Harvest day entry."
-  ;; TODO Refactor HTTP code.
-  (setq harvest-payload (make-hash-table :test 'equal))
-  ;; TODO Not ideal to overwrite hours in Harvest, but unless we do it,
-  ;; it gets reset to 0.
-  (puthash "hours" (alist-get '(hours) entry) harvest-payload)
-  (puthash "project_id" (alist-get '(project_id) entry) harvest-payload)
-  (puthash "task_id" (alist-get '(task_id) entry) harvest-payload)
-  (puthash "notes" (read-string "Notes: " (alist-get '(notes) entry)) harvest-payload)
-  (let (
-        (harvest-auth (harvest-get-credentials))
-        (url-request-method "POST")
-        (url-set-mime-charset-string)
-        (url-mime-language-string nil)
-        (url-mime-encoding-string nil)
-        (url-mime-accept-string "application/json")
-        (url-personal-mail-address nil)
-        (url-request-data (json-encode harvest-payload))
-        )
-    (setq request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/daily/update/%s" (alist-get '(id) entry))))
-    (setq url-request-extra-headers
-          `(("Content-Type" . "application/json")
-            ("Authorization" . ,(gethash "auth" harvest-auth))))
-    (with-current-buffer (url-retrieve-synchronously request-url)
-      (goto-char (point-min))
-      (search-forward "\n\n" nil t)
-      (delete-region (point-min) (point))
-      (json-read)
-      (message (format "Updated notes for task %s in %s for %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))
-      )))
+  "Edit the description for a Harvest day ENTRY."
+  (let ((harvest-payload (make-hash-table :test 'equal)))
+    ;; TODO Not ideal to overwrite hours in Harvest, but unless we do it,
+    ;; it gets reset to 0.
+    (puthash "hours" (alist-get '(hours) entry) harvest-payload)
+    (puthash "project_id" (alist-get '(project_id) entry) harvest-payload)
+    (puthash "task_id" (alist-get '(task_id) entry) harvest-payload)
+    (puthash "notes" (read-string "Notes: " (alist-get '(notes) entry)) harvest-payload)
+    (harvest-api "POST" (format "daily/update/%s" (alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))))
 
 ;;;###autoload
 (defun harvest-clock-out ()
-  "Clocks out of any active timer."
-  ;; TODO Refactor HTTP code.
+  "Clock out of any active timer."
   (interactive)
   (mapcar (lambda (entry)
             (if (alist-get '(timer_started_at) entry)
@@ -190,6 +171,7 @@
           (alist-get '(day_entries) (harvest-refresh-entries))))
 
 (defun harvest-get-tasks-for-project (project)
+  ;; TODO: Add docstring.
   (mapcar (lambda (task)
             (cons
              (alist-get '(name) task)
@@ -198,6 +180,7 @@
 
 (defun harvest-api (method path payload completion-message)
   "Make an API call to Harvest."
+  ;; TODO: Document params.
   (let (
         (harvest-auth (harvest-get-credentials))
         (url-request-method method)
@@ -221,68 +204,28 @@
         ))))
 
 (defun harvest-clock-in-project-task-entry (entry task)
-  "Start a new timer for a task on a project. Entry is actually not populated,
-  which is why we need to split "task" on the colon to retrieve project and
-  task info."
-  ;; TODO: Refactor HTTP code.
-  (setq harvest-payload (make-hash-table :test 'equal))
-  (puthash "project_id" (car (s-split ":" task)) harvest-payload)
-  (puthash "task_id" (car (cdr (s-split ":" task))) harvest-payload)
-  (puthash "notes" (read-string "Notes: ") harvest-payload)
-  (let (
-        (harvest-auth (harvest-get-credentials))
-        (url-request-method "POST")
-        (url-set-mime-charset-string)
-        (url-mime-language-string nil)
-        (url-mime-encoding-string nil)
-        (url-mime-accept-string "application/json")
-        (url-personal-mail-address nil)
-        (url-request-data (json-encode harvest-payload))
-        )
-    (setq request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/daily/add")))
-    (setq url-request-extra-headers
-          `(("Content-Type" . "application/json")
-            ("Authorization" . ,(gethash "auth" harvest-auth))))
-    (with-current-buffer (url-retrieve-synchronously request-url)
-      (goto-char (point-min))
-      (search-forward "\n\n" nil t)
-      (delete-region (point-min) (point))
-      (json-read)
-      (message "Started new task: %s" gethash "notes" harvest-auth)
-      )))
+  "Start a new timer for an ENTRY on a particular TASK.
+Entry is actually not populated, which is why we need to split task on the
+colon to retrieve project and task info."
+  (let ((harvest-payload (make-hash-table :test 'equal)))
+    (puthash "project_id" (car (s-split ":" task)) harvest-payload)
+    (puthash "task_id" (car (cdr (s-split ":" task))) harvest-payload)
+    (puthash "notes" (read-string "Notes: ") harvest-payload)
+    (harvest-api "POST" "daily/add" harvest-payload (format "Started new task: %s" (gethash "notes" harvest-payload)))))
 
 (defun harvest-toggle-timer-for-entry (entry)
-  "Clock in or out of a given entry."
-  ;; TODO Refactor HTTP code.
-  (setq prompt (format "Are you sure you want to clock in for %s?" (harvest-format-entry entry)))
-  (setq clock-message (format "Clocked in for %s" (harvest-format-entry entry)))
-  (if (assoc 'timer_started_at entry)
-      (progn
-        (setq prompt (format "Are you sure you want to clock out of %s?" (harvest-format-entry entry)))
-        (setq clock-message (format "Clocked out of %s" (harvest-format-entry entry)))
-        )
-    )
-  (if (yes-or-no-p prompt)
-      (let (
-            (harvest-auth (harvest-get-credentials))
-            (url-request-method "GET")
-            (url-set-mime-charset-string)
-            (url-mime-language-string nil)
-            (url-mime-encoding-string nil)
-            (url-mime-accept-string "application/json")
-            (url-personal-mail-address nil)
-            )
-        (setq request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/daily/timer/%s" (alist-get '(id) entry))))
-        (setq url-request-extra-headers
-              `(("Content-Type" . "application/json")
-                ("Authorization" . ,(gethash "auth" harvest-auth))))
-        (with-current-buffer (url-retrieve-synchronously request-url)
-          (goto-char (point-min))
-          (search-forward "\n\n" nil t)
-          (delete-region (point-min) (point))
-          (json-read)
-          (message clock-message)
-          ))))
+  "Clock in or out of a given ENTRY."
+  ;; TODO: Fix the logic here.
+  (let ((timer_started (assoc 'timer_started_at entry)))
+    (if '(timer_started)
+        (progn
+          (setq prompt (format "Are you sure you want to clock in for %s?" (harvest-format-entry entry)))
+          (setq clock-message (format "Clocked in for %s" (harvest-format-entry entry))))
+      (setq prompt (format "Are you sure you want to clock out of %s?" (harvest-format-entry entry)))
+      (setq clock-message (format "Clocked out of %s" (harvest-format-entry entry)))) 
+    (if (yes-or-no-p prompt)
+        (harvest-api "GET" (format "daily/timer/%s" (alist-get '(id) entry)) nil clock-message)
+      )))
 
 (provide 'harvest)
 ;;; harvest.el ends here
