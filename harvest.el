@@ -42,24 +42,24 @@
 (defun harvest-authenticate()
   "Authenticate with Harvest. Stores basic auth credentials and subdomain"
   (interactive)
+  ;; TODO: Retest.
   (let ((harvest-subdomain (read-string "Enter the subdomain: "))
         (harvest-username (read-string "Enter your username: "))
         (harvest-password (read-string "Enter your password: "))
         )
-    (setq harvest-auth-hash (make-hash-table :test 'equal))
-    (puthash "subdomain" harvest-subdomain harvest-auth-hash)
-    (puthash "auth" (concat "Basic " (base64-encode-string (concat (symbol-value 'harvest-username) ":" (symbol-value 'harvest-password)))) harvest-auth-hash)
-    (unless (file-exists-p "~/.emacs.d/.harvest")
-      (mkdir "~/.emacs.d/.harvest"))
-    (delete-file "~/.emacs.d/.harvest/auth.el")
-    (create-file-buffer "~/.emacs.d/harvest/auth.el")
-    (let (print-length print-level)
-      (write-region (prin1-to-string harvest-auth-hash) nil "~/.emacs.d/.harvest/auth.el" harvest-auth-hash)
-      (message "Credentials stored in '~/.emacs.d/.harvest/auth.el'")
-      ))
+    (let ((harvest-auth-hash (make-hash-table :test 'equal))
+          (puthash "subdomain" harvest-subdomain harvest-auth-hash)
+          (puthash "auth" (concat "Basic " (base64-encode-string (concat (symbol-value 'harvest-username) ":" (symbol-value 'harvest-password)))) harvest-auth-hash)
+          (unless (file-exists-p "~/.emacs.d/.harvest")
+            (mkdir "~/.emacs.d/.harvest"))
+          (delete-file "~/.emacs.d/.harvest/auth.el")
+          (create-file-buffer "~/.emacs.d/harvest/auth.el")
+          (let (print-length print-level)
+            (write-region (prin1-to-string harvest-auth-hash) nil "~/.emacs.d/.harvest/auth.el" harvest-auth-hash)
+            (message "Credentials stored in '~/.emacs.d/.harvest/auth.el'")
+            ))))
   (message "Retrieving data from Harvest")
-  (harvest-refresh-entries)
-  )
+  (harvest-refresh-entries))
 
 (defun harvest-get-credentials()
   "Load credentials from the auth.el file"
@@ -111,7 +111,7 @@
             ))
 
 (defun alist-get (symbols alist)
-  "Look up the value for the chain of SYMBOLS in LIST."
+  "Look up the value for the chain of SYMBOLS in ALIST."
   (if symbols
       (alist-get (cdr symbols)
                  (assoc (car symbols) alist))
@@ -215,7 +215,7 @@ colon to retrieve project and task info."
 
 (defun harvest-toggle-timer-for-entry (entry)
   "Clock in or out of a given ENTRY."
-  ;; TODO: Fix the logic here.
+  ;; TODO: Fix the logic here. Use let instead of setq.
   (let ((timer_started (assoc 'timer_started_at entry)))
     (if '(timer_started)
         (progn
