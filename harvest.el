@@ -74,7 +74,7 @@
         (with-temp-buffer
           (insert-file-contents "~/.emacs.d/.harvest/auth.el")
           (read (buffer-string))))
-    (message "No file exists at ~/.emacs.d/harvest/auth.el. Try running harvest-init()")))
+    (message "No file exists at ~/.emacs.d/harvest/auth.el. Try running harvest-authenticate()")))
 
 ;;;###autoload
 (defun harvest ()
