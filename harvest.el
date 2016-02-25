@@ -231,7 +231,7 @@
 
 (defun harvest-clock-in-project-task-entry (entry task)
   "Start a new timer for a task on a project. Entry is actually not populated,
-  which is why we need to split "task" on the colon to retrieve project and
+  which is why we need to split `task' on the colon to retrieve project and
   task info."
   ;; TODO: Refactor HTTP code.
   (setq harvest-payload (make-hash-table :test 'equal))
