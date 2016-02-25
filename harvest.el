@@ -48,24 +48,21 @@
 (defun harvest-authenticate()
   "Authenticate with Harvest. Stores basic auth credentials and subdomain"
   (interactive)
-  ;; TODO: Retest.
-  (let ((harvest-subdomain (read-string "Enter the subdomain: "))
-        (harvest-username (read-string "Enter your username: "))
-        (harvest-password (read-string "Enter your password: "))
-        )
-    (let ((harvest-auth-hash (make-hash-table :test 'equal))
-          (puthash "subdomain" harvest-subdomain harvest-auth-hash)
-          (puthash "auth" (concat "Basic " (base64-encode-string (concat (symbol-value 'harvest-username) ":" (symbol-value 'harvest-password)))) harvest-auth-hash)
-          (unless (file-exists-p "~/.emacs.d/.harvest")
-            (mkdir "~/.emacs.d/.harvest"))
-          (delete-file "~/.emacs.d/.harvest/auth.el")
-          (create-file-buffer "~/.emacs.d/harvest/auth.el")
-          (let (print-length print-level)
-            (write-region (prin1-to-string harvest-auth-hash) nil "~/.emacs.d/.harvest/auth.el" harvest-auth-hash)
-            (message "Credentials stored in '~/.emacs.d/.harvest/auth.el'")
-            ))))
+  (let ((harvest-auth-hash (make-hash-table :test 'equal)))
+    (puthash "subdomain" (read-string "Enter the subdomain (e.g.'example' for a site like 'example.harvestapp.com'): ") harvest-auth-hash)
+    (puthash "auth" (concat "Basic " (base64-encode-string (concat (read-string "Enter your username: ") ":" (read-passwd "Enter your password: ")))) harvest-auth-hash)
+    (unless (file-exists-p "~/.emacs.d/.harvest")
+      (mkdir "~/.emacs.d/.harvest"))
+    (if (file-exists-p "~/.emacs.d/.harvest/auth.el")
+        (delete-file "~/.emacs.d/.harvest/auth.el"))
+    (create-file-buffer "~/.emacs.d/harvest/auth.el")
+    (let (print-length print-level)
+      (write-region (prin1-to-string harvest-auth-hash) nil "~/.emacs.d/.harvest/auth.el" harvest-auth-hash)
+      (message "Credentials stored in '~/.emacs.d/.harvest/auth.el'")
+      ))
   (message "Retrieving data from Harvest")
-  (harvest-refresh-entries))
+  (harvest-refresh-entries)
+  (hydra-harvest/body))
 
 (defun harvest-get-credentials()
   "Load credentials from the auth.el file"
@@ -90,6 +87,7 @@
 (defun harvest-search-daily-entries ()
   "Ivy interface to search through day entries."
   ;; TODO: Do this asynchronously, and earlier.
+  ;; TODO: Sort by most recent entry.
   (harvest-refresh-entries)
   (ivy-read "Day entries: "
             (mapcar (lambda (entry)
@@ -103,6 +101,7 @@
 
 (defun harvest-create-new-entry ()
   "Create a new entry for a particular project and task."
+  ;; TODO: Sort by name.
   (ivy-read "Project: "
             (mapcar (lambda (entry)
                       (cons (harvest-format-project-entry entry) entry))
@@ -187,16 +186,14 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
 (defun harvest-api (method path payload completion-message)
   "Make an API call to Harvest."
   ;; TODO: Document params.
-  (let (
-        (harvest-auth (harvest-get-credentials))
+  (let ((harvest-auth (harvest-get-credentials))
         (url-request-method method)
         (url-set-mime-charset-string)
         (url-mime-language-string nil)
         (url-mime-encoding-string nil)
         (url-mime-accept-string "application/json")
         (url-personal-mail-address nil)
-        (url-request-data (json-encode payload))
-        )
+        (url-request-data (json-encode payload)))
     (let ((request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/%s" path))))
       (let ((url-request-extra-headers
              `(("Content-Type" . "application/json")
