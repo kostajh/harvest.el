@@ -88,7 +88,7 @@
   (setq harvest-cached-daily-entries (harvest-api "GET" "daily" nil "Refreshed cache of daily entries")))
 
 (defun harvest-search-daily-entries ()
-  "Get day entries from the daily.json file."
+  "Ivy interface to search through day entries."
   ;; TODO: Do this asynchronously, and earlier.
   (harvest-refresh-entries)
   (ivy-read "Day entries: "
