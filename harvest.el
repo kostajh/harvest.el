@@ -9,8 +9,14 @@
 ;; Package-Requires: ((swiper "0.7.0") (hydra "0.13.0") (s "1.11.0"))
 ;;
 ;; This file is not part of GNU Emacs.
+
 ;;; Commentary:
-;;; TODO
+;; harvest.el is an Emacs package for integrating with the Harvest time
+;; tracking service (getharvest.com).  The package supports creating and
+;; modifying time entries for the current day.  To begin, run
+;; M-x harvest-authenticate, and then M-x harvest to get started with
+;; logging time.
+
 ;;; Code:
 
 (require 'url)
