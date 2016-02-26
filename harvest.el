@@ -1,4 +1,4 @@
-;;; harvest.el --- Harvest integration with Emacs
+;;; harvest.el --- Harvest integration
 ;;
 ;; Copyright (C) 2016  Kosta Harlan
 
@@ -11,7 +11,7 @@
 ;; This file is not part of GNU Emacs.
 
 ;;; Commentary:
-;; harvest.el is an Emacs package for integrating with the Harvest time
+;; harvest.el provides integration with the Harvest time
 ;; tracking service (getharvest.com).  The package supports creating and
 ;; modifying time entries for the current day.  To begin, run
 ;; M-x harvest-authenticate, and then M-x harvest to get started with
