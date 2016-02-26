@@ -29,6 +29,8 @@
 (defvar harvest-cached-daily-entries nil)
 (defvar hydra-harvest-day-entry nil)
 (defvar harvest-selected-entry nil)
+(defvar harvest-dot-directory (concat user-emacs-directory ".harvest"))
+(defvar harvest-dot-directory-auth (concat harvest-dot-directory "/auth.el"))
 
 (defhydra hydra-harvest ()
   "harvest"
@@ -48,11 +50,7 @@
 (defun harvest-authenticate()
   "Authenticate with Harvest. Stores basic auth credentials and subdomain"
   (interactive)
-  (let* (
-        (harvest-auth-hash (make-hash-table :test 'equal))
-        (harvest-dot-directory (concat user-emacs-directory "/.harvest"))
-        (harvest-dot-directory-auth (concat harvest-dot-directory "/auth.el"))
-        )
+  (let ((harvest-auth-hash (make-hash-table :test 'equal)))
     (puthash "subdomain" (read-string "Enter the subdomain (e.g.'example' for a site like 'example.harvestapp.com'): ") harvest-auth-hash)
     (puthash "auth" (concat "Basic " (base64-encode-string (concat (read-string "Enter your username: ") ":" (read-passwd "Enter your password: ")))) harvest-auth-hash)
     (unless (file-exists-p harvest-dot-directory)
@@ -70,12 +68,12 @@
 
 (defun harvest-get-credentials()
   "Load credentials from the auth.el file"
-  (if (file-exists-p "~/.emacs.d/.harvest/auth.el")
+  (if (file-exists-p harvest-dot-directory-auth)
       (progn
         (with-temp-buffer
-          (insert-file-contents "~/.emacs.d/.harvest/auth.el")
+          (insert-file-contents harvest-dot-directory-auth)
           (read (buffer-string))))
-    (message "No file exists at ~/.emacs.d/harvest/auth.el. Try running harvest-authenticate()")))
+    (message (format "No file exists at '%s'. Try running harvest-authenticate()" harvest-dot-directory-auth))))
 
 ;;;###autoload
 (defun harvest ()
