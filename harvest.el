@@ -124,7 +124,7 @@
 
 (defun harvest-format-entry (entry)
   "Format an ENTRY as a string.
-Format is PROJECT (CLIENT) \n TASK - NOTES" 
+Format is PROJECT (CLIENT) \n TASK - NOTES"
   (let ((formatted-string (concat
                            (alist-get '(project) entry)
                            " ("
@@ -176,7 +176,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
           (alist-get '(day_entries) (harvest-refresh-entries))))
 
 (defun harvest-get-tasks-for-project (project)
-  ;; TODO: Add docstring.
+  "Get all available tasks for PROJECT."
   (mapcar (lambda (task)
             (cons
              (alist-get '(name) task)
@@ -184,8 +184,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
           (alist-get '(tasks) project)))
 
 (defun harvest-api (method path payload completion-message)
-  "Make an API call to Harvest."
-  ;; TODO: Document params.
+  "Make an METHOD call to PATH with PAYLOAD and COMPLETION-MESSAGE."
   (let ((harvest-auth (harvest-get-credentials))
         (url-request-method method)
         (url-set-mime-charset-string)
