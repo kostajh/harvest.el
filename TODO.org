@@ -1,2 +1,0 @@
-** TODO Ability to edit hours on an entry
-** TODO Refactor HTTP code for modularity and asynchronous requests
