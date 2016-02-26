@@ -193,7 +193,9 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
         (url-mime-encoding-string nil)
         (url-mime-accept-string "application/json")
         (url-personal-mail-address nil)
-        (url-request-data (json-encode payload)))
+        (url-request-data (if (string-equal method "POST")
+                              (json-encode payload)
+                            nil)))
     (let ((request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/%s" path))))
       (let ((url-request-extra-headers
              `(("Content-Type" . "application/json")
