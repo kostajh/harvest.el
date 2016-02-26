@@ -90,7 +90,7 @@
   (ivy-read "Day entries: "
             (mapcar (lambda (entry)
                       (cons (harvest-format-entry entry) entry))
-                    (alist-get '(day_entries) harvest-cached-daily-entries))
+                    (harvest-alist-get '(day_entries) harvest-cached-daily-entries))
             :action (lambda (x)
                       (setq harvest-selected-entry x)
                       (hydra-harvest-day-entry/body)))
@@ -102,7 +102,7 @@
   (ivy-read "Project: "
             (mapcar (lambda (entry)
                       (cons (harvest-format-project-entry entry) entry))
-                    (alist-get '(projects) harvest-cached-daily-entries))
+                    (harvest-alist-get '(projects) harvest-cached-daily-entries))
             :action (lambda (x)
                       (setq harvest-selected-entry x)
                       (ivy-read "Task: "
@@ -111,10 +111,10 @@
                                           (harvest-clock-in-project-task-entry nil selection))))
             ))
 
-(defun alist-get (symbols alist)
+(defun harvest-alist-get (symbols alist)
   "Look up the value for the chain of SYMBOLS in ALIST."
   (if symbols
-      (alist-get (cdr symbols)
+      (harvest-alist-get (cdr symbols)
                  (assoc (car symbols) alist))
     (cdr alist)))
 
@@ -122,25 +122,25 @@
   "Format an ENTRY as a string.
 Format is PROJECT (CLIENT) \n TASK - NOTES"
   (let ((formatted-string (concat
-                           (alist-get '(project) entry)
+                           (harvest-alist-get '(project) entry)
                            " ("
-                           (alist-get '(client) entry)
+                           (harvest-alist-get '(client) entry)
                            ")"
                            ": "
-                           (alist-get '(task) entry)
+                           (harvest-alist-get '(task) entry)
                            " - "
-                           (alist-get '(notes) entry)
+                           (harvest-alist-get '(notes) entry)
                            "\t["
-                           (number-to-string (alist-get '(hours) entry))
+                           (number-to-string (harvest-alist-get '(hours) entry))
                            "]"
                            )))
-    (if (alist-get '(timer_started_at) entry)
-        (propertize formatted-string 'face 'bold)
+    (if (harvest-alist-get '(timer_started_at) entry)
+        (propertize formatted-string 'face '(:background "green" :foreground "white"))
       (propertize formatted-string 'face 'nil))))
 
 (defun harvest-format-project-entry (entry)
   "Show available projects and clients to clock in for ENTRY."
-  (concat (alist-get '(name) entry) " (" (alist-get '(client) entry) ")")
+  (concat (harvest-alist-get '(name) entry) " (" (alist-get '(client) entry) ")")
   )
 
 (defun harvest-get-cached-daily-entries ()
@@ -156,28 +156,28 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
   (let ((harvest-payload (make-hash-table :test 'equal)))
     ;; Not ideal to overwrite hours in Harvest, but unless we do it,
     ;; the time entry is reset to 0.
-    (puthash "hours" (alist-get '(hours) entry) harvest-payload)
-    (puthash "project_id" (alist-get '(project_id) entry) harvest-payload)
-    (puthash "task_id" (alist-get '(task_id) entry) harvest-payload)
-    (puthash "notes" (read-string "Notes: " (alist-get '(notes) entry)) harvest-payload)
-    (harvest-api "POST" (format "daily/update/%s" (alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))))
+    (puthash "hours" (harvest-alist-get '(hours) entry) harvest-payload)
+    (puthash "project_id" (harvest-alist-get '(project_id) entry) harvest-payload)
+    (puthash "task_id" (harvest-alist-get '(task_id) entry) harvest-payload)
+    (puthash "notes" (read-string "Notes: " (harvest-alist-get '(notes) entry)) harvest-payload)
+    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))))
 
 ;;;###autoload
 (defun harvest-clock-out ()
   "Clock out of any active timer."
   (interactive)
   (mapcar (lambda (entry)
-            (if (alist-get '(timer_started_at) entry)
-                (harvest-api "GET" (format "daily/timer/%s" (alist-get '(id) entry)) nil (message (format "Clocked out of %s in %s - %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry))))))
-          (alist-get '(day_entries) (harvest-refresh-entries))))
+            (if (harvest-alist-get '(timer_started_at) entry)
+                (harvest-api "GET" (format "daily/timer/%s" (harvest-alist-get '(id) entry)) nil (message (format "Clocked out of %s in %s - %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry))))))
+          (harvest-alist-get '(day_entries) (harvest-get-cached-daily-entries))))
 
 (defun harvest-get-tasks-for-project (project)
   "Get all available tasks for PROJECT."
   (mapcar (lambda (task)
             (cons
-             (alist-get '(name) task)
-             (format "%d:%d" (alist-get '(id) project) (alist-get '(id) task))))
-          (alist-get '(tasks) project)))
+             (harvest-alist-get '(name) task)
+             (format "%d:%d" (harvest-alist-get '(id) project) (alist-get '(id) task))))
+          (harvest-alist-get '(tasks) project)))
 
 (defun harvest-api (method path payload completion-message)
   "Make an METHOD call to PATH with PAYLOAD and COMPLETION-MESSAGE."
@@ -217,9 +217,9 @@ colon to retrieve project and task info."
   "Clock in or out of a given ENTRY."
   (if (assoc 'timer_started_at entry)
       (when (yes-or-no-p (format "Are you sure you want to clock out of %s?" (harvest-format-entry entry)))
-        (harvest-api "GET" (format "daily/timer/%s" (alist-get '(id) entry)) nil (format "Clocked out of %s" (harvest-format-entry entry))))
+        (harvest-api "GET" (format "daily/timer/%s" (harvest-alist-get '(id) entry)) nil (format "Clocked out of %s" (harvest-format-entry entry))))
     (when (yes-or-no-p (format "Are you sure you want to clock in for %s?" (harvest-format-entry entry)))
-      (harvest-api "GET" (format "daily/timer/%s" (alist-get '(id) entry)) nil (format "Clocked in for of %s" (harvest-format-entry entry))))))
+      (harvest-api "GET" (format "daily/timer/%s" (harvest-alist-get '(id) entry)) nil (format "Clocked in for of %s" (harvest-format-entry entry))))))
 
 (provide 'harvest)
 ;;; harvest.el ends here
