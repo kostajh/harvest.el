@@ -22,6 +22,8 @@
 
 ** Usage
 
+Call ~M-x harvest-authenticate~ to set your credentials for Harvest.
+
 Call ~M-x harvest~ to start the main Harvest [[https://github.com/abo-abo/hydra][hydra]].
 
 ** Configuration
