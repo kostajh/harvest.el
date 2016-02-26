@@ -86,14 +86,11 @@
 
 (defun harvest-search-daily-entries ()
   "Ivy interface to search through day entries."
-  ;; TODO: Do this asynchronously, and earlier.
   ;; TODO: Sort by most recent entry.
-  (harvest-refresh-entries)
   (ivy-read "Day entries: "
             (mapcar (lambda (entry)
                       (cons (harvest-format-entry entry) entry))
-                    ;; TODO: Use cache data here.
-                    (alist-get '(day_entries) (harvest-refresh-entries)))
+                    (alist-get '(day_entries) harvest-cached-daily-entries))
             :action (lambda (x)
                       (setq harvest-selected-entry x)
                       (hydra-harvest-day-entry/body)))
@@ -105,8 +102,7 @@
   (ivy-read "Project: "
             (mapcar (lambda (entry)
                       (cons (harvest-format-project-entry entry) entry))
-                    ;; TODO: Use cache data here.
-                    (alist-get '(projects) (harvest-refresh-entries)))
+                    (alist-get '(projects) harvest-cached-daily-entries))
             :action (lambda (x)
                       (setq harvest-selected-entry x)
                       (ivy-read "Task: "
@@ -158,8 +154,8 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
 (defun harvest-edit-description (entry)
   "Edit the description for a Harvest day ENTRY."
   (let ((harvest-payload (make-hash-table :test 'equal)))
-    ;; TODO Not ideal to overwrite hours in Harvest, but unless we do it,
-    ;; it gets reset to 0.
+    ;; Not ideal to overwrite hours in Harvest, but unless we do it,
+    ;; the time entry is reset to 0.
     (puthash "hours" (alist-get '(hours) entry) harvest-payload)
     (puthash "project_id" (alist-get '(project_id) entry) harvest-payload)
     (puthash "task_id" (alist-get '(task_id) entry) harvest-payload)
