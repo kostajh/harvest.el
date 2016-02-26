@@ -1,6 +1,6 @@
 * Harvest.el
 
-~harvest.el~ is a utility for interacting with [[http://harvestapp.com][Harvest]] from Emacs.
+~harvest.el~ is a utility for interacting with [[http://harvestapp.com][Harvest]].
 
 ** Features
 
