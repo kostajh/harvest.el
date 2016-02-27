@@ -1,6 +1,8 @@
 * Harvest.el
 
-~harvest.el~ is a utility for interacting with [[http://harvestapp.com][Harvest]].
+[[http://melpa.org/#/harvest][file:http://melpa.org/packages/harvest-badge.svg]]
+
+~harvest.el~ is a utility for interacting with [[http://harvestapp.com][Harvest]] from within Emacs.
 
 ** Features
 
