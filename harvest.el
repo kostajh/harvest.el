@@ -117,7 +117,7 @@
   "Look up the value for the chain of SYMBOLS in ALIST."
   (if symbols
       (harvest-alist-get (cdr symbols)
-                 (assoc (car symbols) alist))
+                         (assoc (car symbols) alist))
     (cdr alist)))
 
 (defun harvest-format-entry (entry)
@@ -142,7 +142,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
 
 (defun harvest-format-project-entry (entry)
   "Show available projects and clients to clock in for ENTRY."
-  (concat (harvest-alist-get '(name) entry) " (" (alist-get '(client) entry) ")")
+  (concat (harvest-alist-get '(name) entry) " (" (harvest-alist-get '(client) entry) ")")
   )
 
 (defun harvest-get-cached-daily-entries ()
@@ -162,7 +162,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
     (puthash "project_id" (harvest-alist-get '(project_id) entry) harvest-payload)
     (puthash "task_id" (harvest-alist-get '(task_id) entry) harvest-payload)
     (puthash "notes" (read-string "Notes: " (harvest-alist-get '(notes) entry)) harvest-payload)
-    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))))
+    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (harvest-alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))))
 
 ;;;###autoload
 (defun harvest-clock-out ()
@@ -170,7 +170,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
   (interactive)
   (mapcar (lambda (entry)
             (if (harvest-alist-get '(timer_started_at) entry)
-                (harvest-api "GET" (format "daily/timer/%s" (harvest-alist-get '(id) entry)) nil (message (format "Clocked out of %s in %s - %s" (alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry))))))
+                (harvest-api "GET" (format "daily/timer/%s" (harvest-alist-get '(id) entry)) nil (message (format "Clocked out of %s in %s - %s" (harvest-alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry))))))
           (harvest-alist-get '(day_entries) (harvest-get-cached-daily-entries))))
 
 (defun harvest-get-tasks-for-project (project)
@@ -178,32 +178,32 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
   (mapcar (lambda (task)
             (cons
              (harvest-alist-get '(name) task)
-             (format "%d:%d" (harvest-alist-get '(id) project) (alist-get '(id) task))))
+             (format "%d:%d" (harvest-alist-get '(id) project) (harvest-alist-get '(id) task))))
           (harvest-alist-get '(tasks) project)))
 
 (defun harvest-api (method path payload completion-message)
   "Make an METHOD call to PATH with PAYLOAD and COMPLETION-MESSAGE."
-  (let ((harvest-auth (harvest-get-credentials))
-        (url-request-method method)
-        (url-set-mime-charset-string)
-        (url-mime-language-string nil)
-        (url-mime-encoding-string nil)
-        (url-mime-accept-string "application/json")
-        (url-personal-mail-address nil)
-        (url-request-data (if (string-equal method "POST")
-                              (json-encode payload)
-                            nil)))
-    (let ((request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/%s" path))))
-      (let ((url-request-extra-headers
-             `(("Content-Type" . "application/json")
-               ("Authorization" . ,(gethash "auth" harvest-auth))))))
-      (with-current-buffer (url-retrieve-synchronously request-url)
-        (goto-char (point-min))
-        (search-forward "\n\n" nil t)
-        (delete-region (point-min) (point))
-        (message "%s" completion-message)
-        (json-read)
-        ))))
+  (let* ((harvest-auth (harvest-get-credentials))
+         (url-request-method method)
+         (url-set-mime-charset-string)
+         (url-mime-language-string nil)
+         (url-mime-encoding-string nil)
+         (url-mime-accept-string "application/json")
+         (url-personal-mail-address nil)
+         (url-request-data (if (string-equal method "POST")
+                               (json-encode payload)
+                             nil))
+         (request-url (concat "https://" (gethash "subdomain" harvest-auth) (format ".harvestapp.com/%s" path)))
+         (url-request-extra-headers
+          `(("Content-Type" . "application/json")
+            ("Authorization" . ,(gethash "auth" harvest-auth)))))
+    (with-current-buffer (url-retrieve-synchronously request-url)
+      (goto-char (point-min))
+      (search-forward "\n\n" nil t)
+      (delete-region (point-min) (point))
+      (message "%s" completion-message)
+      (json-read)
+      )))
 
 (defun harvest-clock-in-project-task-entry (entry task)
   "Start a new timer for an ENTRY on a particular TASK.
