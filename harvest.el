@@ -162,7 +162,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
     (puthash "project_id" (harvest-alist-get '(project_id) entry) harvest-payload)
     (puthash "task_id" (harvest-alist-get '(task_id) entry) harvest-payload)
     (puthash "notes" (read-string "Notes: " (harvest-alist-get '(notes) entry)) harvest-payload)
-    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (harvest-alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry)))))
+    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (harvest-alist-get '(task) entry) (harvest-alist-get '(project) entry) (harvest-alist-get '(client) entry)))))
 
 ;;;###autoload
 (defun harvest-clock-out ()
@@ -170,7 +170,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
   (interactive)
   (mapcar (lambda (entry)
             (if (harvest-alist-get '(timer_started_at) entry)
-                (harvest-api "GET" (format "daily/timer/%s" (harvest-alist-get '(id) entry)) nil (message (format "Clocked out of %s in %s - %s" (harvest-alist-get '(task) entry) (alist-get '(project) entry) (alist-get '(client) entry))))))
+                (harvest-api "GET" (format "daily/timer/%s" (harvest-alist-get '(id) entry)) nil (message (format "Clocked out of %s in %s - %s" (harvest-alist-get '(task) entry) (harvest-alist-get '(project) entry) (harvest-alist-get '(client) entry))))))
           (harvest-alist-get '(day_entries) (harvest-get-cached-daily-entries))))
 
 (defun harvest-get-tasks-for-project (project)
