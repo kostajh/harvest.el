@@ -129,9 +129,9 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
                            " ("
                            (harvest-alist-get '(client) entry)
                            ")"
-                           ": "
+                           "\n"
                            (harvest-alist-get '(task) entry)
-                           " - "
+                           " – "
                            (harvest-alist-get '(notes) entry)
                            "\t["
                            (number-to-string (harvest-alist-get '(hours) entry))
