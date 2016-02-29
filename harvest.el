@@ -88,6 +88,7 @@
 
 (defun harvest-search-daily-entries ()
   "Ivy interface to search through day entries."
+  (harvest-refresh-entries)
   ;; TODO: Sort by most recent entry.
   (ivy-read "Day entries: "
             (mapcar (lambda (entry)
@@ -171,7 +172,9 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
   (mapcar (lambda (entry)
             (if (harvest-alist-get '(timer_started_at) entry)
                 (harvest-api "GET" (format "daily/timer/%s" (harvest-alist-get '(id) entry)) nil (message (format "Clocked out of %s in %s - %s" (harvest-alist-get '(task) entry) (harvest-alist-get '(project) entry) (harvest-alist-get '(client) entry))))))
-          (harvest-alist-get '(day_entries) (harvest-get-cached-daily-entries))))
+          (harvest-alist-get '(day_entries) (harvest-get-cached-daily-entries)))
+  (harvest-refresh-entries)
+  )
 
 (defun harvest-get-tasks-for-project (project)
   "Get all available tasks for PROJECT."
@@ -213,7 +216,8 @@ colon to retrieve project and task info."
     (puthash "project_id" (car (s-split ":" task)) harvest-payload)
     (puthash "task_id" (car (cdr (s-split ":" task))) harvest-payload)
     (puthash "notes" (read-string "Notes: ") harvest-payload)
-    (harvest-api "POST" "daily/add" harvest-payload (format "Started new task: %s" (gethash "notes" harvest-payload)))))
+    (harvest-api "POST" "daily/add" harvest-payload (format "Started new task: %s" (gethash "notes" harvest-payload))))
+  (harvest-refresh-entries))
 
 (defun harvest-toggle-timer-for-entry (entry)
   "Clock in or out of a given ENTRY."
