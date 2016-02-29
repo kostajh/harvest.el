@@ -138,7 +138,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
                            "]"
                            )))
     (if (harvest-alist-get '(timer_started_at) entry)
-        (propertize formatted-string 'face '(:background "#D4F1FF"))
+        (propertize formatted-string 'face '(:background "#D4F1FF" :foreground "#000000"))
       (propertize formatted-string 'face 'nil))))
 
 (defun harvest-format-project-entry (entry)
