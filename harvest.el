@@ -148,11 +148,10 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
 
 (defun harvest-get-cached-daily-entries ()
   "Get daily entries from the variable, or query Harvest if not set."
-  ;; '(harvest-cached-daily-entries))
   (if (boundp 'harvest-cached-daily-entries)
-      '(harvest-cached-daily-entries)
+      harvest-cached-daily-entries
     (harvest-refresh-entries))
-  '(harvest-cached-daily-entries))
+  harvest-cached-daily-entries)
 
 (defun harvest-edit-description (entry)
   "Edit the description for a Harvest day ENTRY."
