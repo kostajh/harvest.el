@@ -162,7 +162,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
     (puthash "project_id" (harvest-alist-get '(project_id) entry) harvest-payload)
     (puthash "task_id" (harvest-alist-get '(task_id) entry) harvest-payload)
     (puthash "notes" (read-string "Notes: " (harvest-alist-get '(notes) entry)) harvest-payload)
-    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated hours for task %s in %s for %s" (harvest-alist-get '(task) entry) (harvest-alist-get '(project) entry) (harvest-alist-get '(client) entry))))
+    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (harvest-alist-get '(task) entry) (harvest-alist-get '(project) entry) (harvest-alist-get '(client) entry))))
   (harvest-refresh-entries))
 
 (defun harvest-edit-hours (entry)
@@ -173,7 +173,7 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
     (puthash "hours" (read-number "Hours spent: " (harvest-alist-get '(hours) entry)) harvest-payload)
     (puthash "project_id" (harvest-alist-get '(project_id) entry) harvest-payload)
     (puthash "task_id" (harvest-alist-get '(task_id) entry) harvest-payload)
-    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated notes for task %s in %s for %s" (harvest-alist-get '(task) entry) (harvest-alist-get '(project) entry) (harvest-alist-get '(client) entry))))
+    (harvest-api "POST" (format "daily/update/%s" (harvest-alist-get '(id) entry)) harvest-payload (format "Updated hours for task %s in %s for %s" (harvest-alist-get '(task) entry) (harvest-alist-get '(project) entry) (harvest-alist-get '(client) entry))))
   (harvest-refresh-entries))
 
 ;;;###autoload
