@@ -94,6 +94,7 @@
             (mapcar (lambda (entry)
                       (cons (harvest-format-entry entry) entry))
                     (harvest-alist-get '(day_entries) harvest-cached-daily-entries))
+            :require-match t
             :action (lambda (x)
                       (setq harvest-selected-entry x)
                       (hydra-harvest-day-entry/body)))
@@ -106,10 +107,12 @@
             (mapcar (lambda (entry)
                       (cons (harvest-format-project-entry entry) entry))
                     (harvest-alist-get '(projects) harvest-cached-daily-entries))
+            :require-match t
             :action (lambda (x)
                       (setq harvest-selected-entry x)
                       (ivy-read "Task: "
                                 (harvest-get-tasks-for-project harvest-selected-entry)
+                                :require-match t
                                 :action (lambda (selection)
                                           (harvest-clock-in-project-task-entry nil selection))))
             ))
