@@ -227,8 +227,8 @@ Format is PROJECT (CLIENT) \n TASK - NOTES"
 Entry is actually not populated, which is why we need to split task on the
 colon to retrieve project and task info."
   (let ((harvest-payload (make-hash-table :test 'equal)))
-    (puthash "project_id" (car (s-split ":" task)) harvest-payload)
-    (puthash "task_id" (car (cdr (s-split ":" task))) harvest-payload)
+    (puthash "project_id" (car (s-split ":" (cdr task))) harvest-payload)
+    (puthash "task_id" (car (cdr (s-split ":" (cdr task)))) harvest-payload)
     (puthash "notes" (read-string "Notes: ") harvest-payload)
     (harvest-api "POST" "daily/add" harvest-payload (format "Started new task: %s" (gethash "notes" harvest-payload))))
   (harvest-refresh-entries))
